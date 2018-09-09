@@ -50,23 +50,6 @@ var initialize = function (db)
     });
 }
 
-// const insertDocuments = function (db, callback)
-// {
-//     // Get the documents collection
-//     const collection = db.collection('documents');
-//     // Insert some documents
-//     collection.insertMany([
-//         { a: 1 }, { a: 2 }, { a: 3 }
-//     ], function (err, result)
-//         {
-//             assert.equal(err, null);
-//             assert.equal(3, result.result.n);
-//             assert.equal(3, result.ops.length);
-//             console.log("Inserted 3 documents into the collection");
-//             callback(result);
-//         });
-// }
-
 var rawGear = {};
 var currentParentTransformedGear = {};
 var transformedDict = {};
@@ -115,7 +98,7 @@ const transformData = function (db, callback)
                             "slots": parseNumbers(gearItem.slots),
                             "cost": parseInt(gearItem.slots.cost, 10),
                             "total_cost": 0,
-                            "gear_materials": {},
+                            "gear_materials": [],
                             "is_material": gearItem.slots.p1_ID === "" && gearItem.slots.p2_ID === "" && gearItem.slots.p3_ID === "" && applyPrefix !== true,
                             "is_final": applyPrefix === true
                         };
@@ -191,15 +174,27 @@ const traverseGearRequirements = function (currentTransformedGear, currentGearIt
             continue;
         }
 
-        let slotOnParent = currentParentTransformedGear.gear_materials[currentSlot.name];
+        let gearMats = currentParentTransformedGear.gear_materials;
+        let found = false;
         
-        if (slotOnParent)
+        for (let i = 0; i < gearMats.length; i++)
         {
-            currentParentTransformedGear.gear_materials[currentSlot.name] = slotOnParent + currentSlot.count;
+            let currentGearMat = gearMats[i];
+
+            if (currentGearMat.gear_id === currentSlot.name)
+            {
+                currentGearMat.count = currentGearMat.count + currentSlot.count;
+                found = true;
+            }
         }
-        else
+
+        if (!found)
         {
-            currentParentTransformedGear.gear_materials[currentSlot.name] = currentSlot.count;
+            gearMats.push({
+                gear_id: gearFromDict.gear_id,
+                display_name: gearFromDict.display_name,
+                count: currentSlot.count
+            })
         }
     }
 }
